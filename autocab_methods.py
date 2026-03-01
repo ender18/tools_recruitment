@@ -115,7 +115,6 @@ async def get_bookings_cancelled(api_autocab: str, driver_id: int) -> int:
 
 
 async def _search_bookings(api_autocab: str, driver_id: int, booking_type: str) -> int:
-    """Llama al endpoint de búsqueda de bookings y retorna la cantidad."""
     from datetime import datetime, timezone
 
     url = f"{AUTOCAB_BASE_URL}/1.2/search"
@@ -123,21 +122,31 @@ async def _search_bookings(api_autocab: str, driver_id: int, booking_type: str) 
         "Ocp-Apim-Subscription-Key": api_autocab,
         "Content-Type": "application/json",
     }
-    payload = {
-        "from": "2025-06-10T00:00:00Z",
-        "to": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.999Z"),
-        "telephoneNumber": "",
-        "driverId": driver_id,
-        "types": [booking_type],
-    }
 
-    async with httpx.AsyncClient() as client:
-        response = await client.post(url, headers=headers, json=payload)
-        response.raise_for_status()
-        data = response.json()
+    total = 0
+    continuation_token = None
 
-    # La respuesta es un objeto con propiedad "bookings"
-    if isinstance(data, dict):
-        return len(data.get("bookings", []))
+    while True:
+        payload = {
+            "from": "2025-06-10T00:00:00Z",
+            "to": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.999Z"),
+            "telephoneNumber": "",
+            "driverId": driver_id,
+            "types": [booking_type],
+        }
 
-    return 0
+        if continuation_token:
+            payload["continuationToken"] = continuation_token
+
+        async with httpx.AsyncClient() as client:
+            response = await client.post(url, headers=headers, json=payload)
+            response.raise_for_status()
+            data = response.json()
+
+        total += len(data.get("bookings", []))
+
+        continuation_token = data.get("continuationToken")
+        if not continuation_token:
+            break
+
+    return total
