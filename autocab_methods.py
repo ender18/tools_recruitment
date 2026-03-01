@@ -80,7 +80,7 @@ async def get_last_log_on(api_autocab: str, driver_id: int) -> int:
 
     last_log_on_str = data.get("lastLogOn")
     if not last_log_on_str:
-        return 0
+        return -1
 
     from datetime import datetime, timezone
     last_log_on = datetime.fromisoformat(last_log_on_str)
