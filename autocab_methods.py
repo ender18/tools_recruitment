@@ -52,7 +52,7 @@ def get_status_autocab(driver: dict) -> str:
     """Extrae el status_autocab desde comments.comment1 del conductor."""
     if driver is None:
         return "unknown"
-    return driver.get("comments", {}).get("comment1", "unknown")
+    return driver.get("comments", {}).get("comment2", "unknown")
 
 
 async def get_licence_id(api_autocab: str, driver_id: int) -> int:
